@@ -30,34 +30,37 @@ function make_kid()
 end
 
 function control_bus()
- btnpress=false
+ btnpressx=false
+ btnpressy=false
  -- left
  if(btn(0)) then
   bus.xvel=-speed
   bus.spr=5
-  btnpress=true
+  btnpressx=true
  end
  -- right
  if(btn(1)) then
   bus.xvel=speed
   bus.spr=7
-  btnpress=true
+  btnpressx=true
  end
  -- up
  if(btn(2)) then
   bus.yvel=-speed
   bus.spr=1
-  btnpress=true
+  btnpressy=true
  end
  -- down
  if(btn(3)) then
   bus.yvel=speed
   bus.spr=3
-  btnpress=true
+  btnpressy=true
  end
  -- friction
- if not(btnpress) then
+ if not(btnpressx) then
   bus.xvel=bus.xvel/1.75
+ end
+ if not(btnpressy) then
   bus.yvel=bus.yvel/1.75
  end
  -- bus goes zoom-zoom
@@ -88,7 +91,6 @@ end
 
 function _draw()
  cls()
- draw_bus()
  foreach(kids,draw_kids)
  draw_bus()
 end
