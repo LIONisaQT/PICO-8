@@ -94,7 +94,8 @@ end
 
 function _update()
  control_bus()
- pal(flr(rnd(14))+1,flr(rnd(14))+1)
+ --pal(flr(rnd(14))+1,flr(rnd(14))+1)
+	if(btn(5,2)) then sfx(3) end
 end
 
 function _draw()
