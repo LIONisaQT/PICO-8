@@ -17,11 +17,18 @@ __lua__
 -- config: num_players 1 or 2
 num_players = 1
 corrupt_mode = false
-debug_mode = true
 max_actors = 128
 
---music(0, 0, 3)
+-- *** debugging variables ***
+debug_mode = true
+god_mode = false
+slomo_spd = 0
+frozen = false
+log_entries = {}
+temp_entries = {}
+text_entries = {}
 
+--music(0, 0, 3)
 
 function make_actor(k,x,y,d)
 	local a = {}
@@ -70,25 +77,102 @@ end
 -- toggled via menu
 function _debug_enabled()
 	if(debug_mode) then
-		debug_mode=false
+		return true
+	else
 		return false
 	end
-	debug_mode=true
-	return true
+end
+
+-- collects debugging statements
+function _debug_log(msg)
+	add(log_entries,msg)
+end
+
+-- prints the log entries
+function _log_print()
+	local y = 1
+	while(y<=#log_entries) do
+		print(log_entries[y],4,y*6-2)
+		y+=1
+	end
+end
+
+-- collects text for certain x,y
+function _debug_text(x,y,msg)
+	add(text_entries,{x=x,y=y,msg=msg})
+end
+
+-- prints the text entries
+function _text_print(x,y,msg)
+	local t = 1
+	while(t<=#text_entries) do
+		print(text_entries[t],x,y)
+		t+=1
+	end
+end
+
+-- toggled via menu
+function _god_mode_enabled()
+	if(god_mode) then
+		return true
+	else
+		return false
+	end
+end
+
+-- toggles invincibiltiy
+function _god_mode()
+	if(_god_mode_enabled()) then
+		player.super = 2
+		if(player.super==0) then
+			player.super=2
+		end
+	end
 end
 
 -- toggles single_step mode
-function single_step()
+function _single_step()
 	if(_debug_enabled()) then
-		if btn(4,1) then
-			sfx(7)
+		if(btnp(4,1)) then
+			if(frozen) then
+				frozen=false
+			else
+				frozen=true
+			end
+		end
+	end
+end
+
+-- catches 's' presses for slomo
+function _slow_motion_toggle()
+	if(_debug_enabled()) then
+		if(btnp(0,1)) then
+			if(slomo_spd==0) then
+				slomo_spd=2
+			elseif(slomo_spd==2) then
+				slomo_spd=4
+			else --slomo_spd==4
+				slomo_spd=0
+			end
+		end
+		_slow_motion()
+	end
+end
+
+-- slow motion implementation
+function _slow_motion()
+	if(_debug_enabled()) then
+		if(slomo_spd>=2) then
+			flip()
+			if(slomo_spd>=4) then
+				flip()
+			end
 		end
 	end
 end
 
 -- called at start by pico-8
 function _init()
-	menuitem(1, "toggle debug", function() _debug_enabled() end)
  actor = {}
  sparkle = {}
  
@@ -150,6 +234,7 @@ function move_spawns(x0, y0)
     m = make_actor(3,x+0.5,y+1,-1)
     m.f0=val
     m.frame=val
+    add(temp_entries,{x+0.5,y+1,m.frame})
    end
    
    -- clear cel if spawned something
@@ -309,6 +394,7 @@ function move_monster(m)
   m.dy = -1
  end
 
+	
 end
 
 function move_actor(pl)
@@ -602,17 +688,49 @@ function outgame_logic()
 end
 
 function _update()
+	-- *** debug toggle ***
+	if(_debug_enabled()) then
+		menuitem(1, "debug off", function() debug_mode=false end)
+		if(god_mode==false) then
+			menuitem(2, "god mode on", function() god_mode=true end)
+		else
+			menuitem(2, "god mode off", function() god_mode=false end)
+		end
+		_god_mode()
+		_slow_motion_toggle()
+	else
+		menuitem(1, "debug on", function() debug_mode=true end)
+		menuitem(2) -- janky solution atm to turn off invincibility option
+	end
+	__update()
+	
+	-- *** debug log ***
+	_debug_log("memory: "..stat(0))
+	_debug_log("cpu: "..stat(1))
+	_debug_log("charge: "..pl.charge)
+	_debug_log("txt_ze: "..#text_entries)
+	foreach(temp_entries[1],_debug_log)
+end
 
-	foreach(actor, move_actor)		
-	foreach(sparkle, move_sparkle)
+function __update()
+	-- clear entries
+	for l in pairs(log_entries) do
+		log_entries[l]=nil
+	end
+	for t in pairs(text_entries) do
+		text_entries[t]=nil
+	end
+	
+	if(not frozen) then
+		foreach(actor, move_actor)	
+		foreach(sparkle, move_sparkle)
+	end
  collisions()
  move_spawns(player.x, player.y)
 
  outgame_logic()
+ _single_step()
  
- if(_debug_enabled()) then
- 	single_step()
- end
  if (corrupt_mode) then
   for i=1,5 do
    poke(rnd(0x8000),rnd(0x100))
@@ -670,6 +788,14 @@ function draw_actor(pl)
 end
 
 function _draw()
+	__draw()
+	if(_debug_enabled()) then
+		foreach(log_entries,_log_print)
+		foreach({text_entries.x,text_entries.y,text_entries.msg},_text_print)
+	end
+end
+
+function __draw()
 
  -- sky
 	camera (0, 0)
@@ -690,12 +816,13 @@ function _draw()
  end
 
  -- clouds behind mountains
- local x = t / 8
- x = x % 128
+ if(not frozen) then
+ 	c_spd = t / 8
+ 	c_spd = c_spd % 128
+ end
  local y=0
- mapdraw(16, 32, -x, y, 16, 16, 0)
- mapdraw(16, 32, 128-x, y, 16, 16, 0)
-
+ mapdraw(16, 32, -c_spd, y, 16, 16, 0)
+ mapdraw(16, 32, 128-c_spd, y, 16, 16, 0)
  
  local bgcol = 13 -- mountains
  pal(5,bgcol) pal(2,bgcol)
@@ -744,13 +871,6 @@ function _draw()
   print(stat(1))
  end
 end
-
-
-
-
-
-
-
 
 __gfx__
 00000000000000004444444433b333b30000000000000000effffff7d66667d666666667d6666667cccccccccccccccc2000000025522552cc5ccccc20000000
