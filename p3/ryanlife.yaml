@@ -1,0 +1,42 @@
+_title: School
+_subtitle: Memes
+init:
+  - write: Daily Life of Ryan Shee
+  - write:
+    - A dose of Rainbow 6
+    - From head to toe
+    - With a meme on the side
+  - write:
+    - You rinse the players out
+    - Flame them inside out, upside down
+  - do: t = time()
+    write:
+      - Click.
+      - The tribunal is in tick
+  - goto: loop
+
+loop:
+  - write:
+    - You continue Rainbow 6
+    - Brings in a drone and spots an enemy
+  - write: Should you go outside?
+    options:
+      Yup: serve
+      Naw, wait a bit: loop
+      I'm still thinking...: loop
+serve:
+  - write:
+    - Throws a hook and goes outside.
+    - BAM
+    - Headshoted...
+  - if: rnd() < 0.5
+    then: good
+    else: bad
+
+good:
+  - write: Insta queue pop, a new match has been found
+  - write: Try again 
+
+bad: 
+  - write: Queue takes forever to pop
+  - write: KMS.

@@ -1,50 +1,64 @@
 pico-8 cartridge // http://www.pico-8.com
 version 9
 __lua__
+-- p3: story scripting engine
+-- rshee
+
+-- i pair-programmed with jeffrey hui
+-- jechui, 1395834
+
 story = {
-	_title=[[story title]],
-	_subtitle=[[story subtitle]],
-	[ [[chose_cake]] ]={
-		{type='write',line=[[sweet.]]},
+	_title=[[school]],
+	_subtitle=[[memes]],
+	[ [[bad]] ]={
+		{type='write',line=[[queue takes forever to pop]]},
 		{type='pause'},
-		{type='write',line=[[the value of x was ...]]},
+		{type='write',line=[[kms.]]},
 		{type='pause'},
-		{type='write-expr',expr=function() return x end},
+	}, -- bad
+	[ [[good]] ]={
+		{type='write',line=[[insta queue pop, a new match has been found]]},
 		{type='pause'},
-	}, -- chose_cake
-	[ [[high]] ]={
-		{type='write',line=[[x was high.]]},
+		{type='write',line=[[try again]]},
 		{type='pause'},
-	}, -- high
+	}, -- good
+	[ [[serve]] ]={
+		{type='write',line=[[throws a hook and goes outside.]]},
+		{type='write',line=[[bam]]},
+		{type='write',line=[[headshoted...]]},
+		{type='pause'},
+		{type='ite',['if']=function() return rnd() < 0.5 end,['then']=[[good]],['else']=[[bad]]},
+		{type='pause'},
+	}, -- serve
 	[ [[init]] ]={
-		{type='write',line=[[a line by itself.]]},
+		{type='write',line=[[daily life of ryan shee]]},
 		{type='pause'},
-		{type='write',line=[[two lines]]},
-		{type='write',line=[[together.]]},
+		{type='write',line=[[a dose of rainbow 6]]},
+		{type='write',line=[[from head to toe]]},
+		{type='write',line=[[with a meme on the side]]},
 		{type='pause'},
-		{type='do',code=function() x = 5 end},
+		{type='write',line=[[you rinse the players out]]},
+		{type='write',line=[[flame them inside out, upside down]]},
 		{type='pause'},
-		{type='ite',['if']=function() return x < 13 end,['then']=[[low]],['else']=[[high]]},
+		{type='do',code=function() t = time() end},
+		{type='write',line=[[click.]]},
+		{type='write',line=[[the tribunal is in tick]]},
+		{type='pause'},
+		{type='goto',label=[[loop]]},
 		{type='pause'},
 	}, -- init
-	[ [[low]] ]={
-		{type='write',line=[[x was low.]]},
+	[ [[loop]] ]={
+		{type='write',line=[[you continue rainbow 6]]},
+		{type='write',line=[[brings in a drone and spots an enemy]]},
 		{type='pause'},
-		{type='goto',label=[[more]]},
-		{type='pause'},
-	}, -- low
-	[ [[chose_death]] ]={
-		{type='write',line=[[sorry.]]},
-		{type='pause'},
-	}, -- chose_death
-	[ [[more]] ]={
-		{type='write',line=[[which will you choose?]]},
+		{type='write',line=[[should you go outside?]]},
 		{type='choice',options={
-			{text=[[cake]],label=[[chose_cake]]},
-			{text=[[death]],label=[[chose_death]]},
+			{text=[[yup]],label=[[serve]]},
+			{text=[[i'm still thinking...]],label=[[loop]]},
+			{text=[[naw, wait a bit]],label=[[loop]]},
 		}}, -- options
 		{type='pause'},
-	}, -- chose_death
+	}, -- loop
 }
 
 states = {
@@ -57,7 +71,7 @@ states = {
 function _init()
 	cls()
 	state = states.running
-	scene = 'chose_cake'
+	scene = 'init'
 	display = {}
 	index = 1
 	options = {}
@@ -99,15 +113,15 @@ function _draw()
 	header()
 	print_display()
 	print_options()
-	print(current_option,4,60)
-	if(btnp(4)) then
-		print("hi!",4,66)
-	end
 end
 
 function _update()
 	if(state == states.running) then
 		step = story[scene][index]
+		-- clears options table
+		for o in pairs(options) do
+			options[o]=nil
+		end
 		
 		if(step.type=='write') then
 			add(display,step.line)
@@ -142,15 +156,36 @@ function _update()
 			index+=1
 		end
 		
+	elseif(state == states.finished) then
+		-- clear display table
+		for e in pairs(display) do
+			display[e]=nil
+		end
+		-- clears options table
+		for o in pairs(options) do
+			options[o]=nil
+		end
+		
+		if(btnp(4)) then
+			scene='init'
+			index=1
+			current_option=1
+			state=states.running
+		end
+		
 	elseif(state == states.paused) then
 		if(btnp(4)) then
 			-- clear display table
 			for e in pairs(display) do
 				display[e]=nil
 			end
-			-- read next line(s) of text
-			state = states.running
+			
 			index+=1
+			if(index>#story[scene]) then
+				state=states.finished
+			else
+				state = states.running
+			end
 		end
 	
 	elseif(state == states.choice) then
@@ -181,8 +216,16 @@ function _update()
 
 		-- select option
 		if(btnp(4)) then
+			-- clear display table
+			for e in pairs(display) do
+				display[e]=nil
+			end
+			
+			state=states.running
+			
 			scene=step.options[current_option].label
 			index=1
+			
 		end
 
 	end
