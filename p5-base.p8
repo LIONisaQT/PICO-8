@@ -39,26 +39,32 @@ function sweep_naive(circles)
 
 	return collisions
 end
-
+		
 hash_mode = false
 cell_size = 16
 
 function pixel_to_cell(x,y)
-	return {flr(x/cell_size),flr(y/cell_size)}
+	return flr(x/cell_size),flr(y/cell_size)
 end
 
 function circle_to_cells(c)
-	list = {}
-
-	t_l=pixel_to_cell(c.x-c.r,c.y-c.r)
-	b_r=pixel_to_cell(c.x+c.r,c.y+c.r)
-	t_r=pixel_to_cell(c.x+c.r,c.y-c.r)
-	b_l=pixel_to_cell(c.x-c.r,c.y+c.r)
+	list	= {}
 	
-	add(list,t_l)
-	add(list,b_r)
-	add(list,t_r)
-	add(list,b_l)
+	x1, y1 =pixel_to_cell(c.x-c.r,c.y-c.r)
+	x2, y2 =pixel_to_cell(c.x+c.r,c.y+c.r)
+	--t_r=pixel_to_cell(c.x+c.r,c.y-c.r)
+	--b_l=pixel_to_cell(c.x-c.r,c.y+c.r)
+	
+	for i = x1, x2 do
+		for j = y1, y2 do
+			add(list, {i, j})
+		end
+	end
+	
+	--add(list,t_l)
+	--add(list,b_r)
+	--add(list,t_r)
+	--add(list,b_l)
 	
 	return list
 end
@@ -86,10 +92,16 @@ end
 
 function sweep_hash(hash)
 	local all_buckets = {}
+
 	for index,bucket in pairs(hash) do
+		
 		collide = sweep_naive(bucket)
-		add(all_buckets,collide)
+		
+		for i in all(collide) do
+			add(all_buckets, i)	
+		end
 	end
+	
 	return all_buckets
 end
 
