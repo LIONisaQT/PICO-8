@@ -2,39 +2,6 @@ pico-8 cartridge // http://www.pico-8.com
 version 8
 __lua__
 
-cell_size = 16
-hash = {}
-
-function pixel_to_cell(x,y)
-	return {x/cell_size+1,y/cell_size+1}
-end
-
-function circle_to_cells(c)
-	list = {}
-	-- add top l
-	add(list,pixel_to_cell(c.x-c.r,c.y-c.r))
-	
-	-- add bot r if not in same cell as top l
-	if not(pixel_to_cell(c.x-c.r,c.y-c.r) == pixel_to_cell(c.x+c.r,c.y+c.r)) then
-		add(list,pixel_to_cell(c.x+c.r,c.y+c.r))
-	end
-	
-	-- add top r if not in same cell as top l
-	if not(pixel_to_cell(c.x-c.r,c.y-c.r) == pixel_to_cell(c.x+c.r,c.y-c.r)) then
-		add(list,pixel_to_cell(c.x+c.r,c.y-c.r))
-	end
-	
-	-- add bot l if not in same cell as top l
-	if not(pixel_to_cell(c.x-c.r,c.y-c.r) == pixel_to_cell(c.x-c.r,c.y+c.r)) then
-		add(list,pixel_to_cell(c.x-c.r,c.y+c.r))
-	end
-	
-	return list
-end
-
-function hash_index(i,j)
-	return 127*j+i
-end
 
 function on_hearts_collide(a,b)
 	if rnd(1) < 0.5 then
@@ -74,8 +41,34 @@ function sweep_naive(circles)
 end
 
 hash_mode = false
+cell_size = 16
+
+function pixel_to_cell(x,y)
+	return {flr(x/cell_size),flr(y/cell_size)}
+end
+
+function circle_to_cells(c)
+	list = {}
+
+	t_l=pixel_to_cell(c.x-c.r,c.y-c.r)
+	b_r=pixel_to_cell(c.x+c.r,c.y+c.r)
+	t_r=pixel_to_cell(c.x+c.r,c.y-c.r)
+	b_l=pixel_to_cell(c.x-c.r,c.y+c.r)
+	
+	add(list,t_l)
+	add(list,b_r)
+	add(list,t_r)
+	add(list,b_l)
+	
+	return list
+end
+
+function hash_index(i,j)
+	return flr(127*j+i)
+end
 
 function build_hash(circles)
+	hash = {}
 	-- for every heart h
 	for h in all(circles) do
 		-- for every cell, c, h is in
@@ -88,24 +81,28 @@ function build_hash(circles)
 			hash[index] = bucket
 		end
 	end
-	return nil
+	return hash
 end
 
 function sweep_hash(hash)
-	--todo: implement this
-	return {}
+	local all_buckets = {}
+	for index,bucket in pairs(hash) do
+		collide = sweep_naive(bucket)
+		add(all_buckets,collide)
+	end
+	return all_buckets
 end
 
 function query_hash(hash, query)
-	local all_results = {}
 	-- for every cell, c, query is in
 	for c in all(circle_to_cells(query)) do
 		-- compute hash_index for c
-		index = hash_index(c.i,c.j)
+		index = hash_index(c[1],c[2])
 		-- do query_naive with c's bucket and query
-		add(all_results,query_naive(hash[index],query))		
+		local bucket = hash[index]
+		results = query_naive(bucket,query)		
 	end
-	return all_results
+	return results
 end
 
 
@@ -133,7 +130,7 @@ function _init()
 
 	hearts = {}
 
-	for i = 1,2 do
+	for i = 1,50 do
 		add(hearts,{
 			x=rnd(128),
 			y=rnd(128),
