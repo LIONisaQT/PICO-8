@@ -47,6 +47,7 @@ end
 
 function circle_to_cells(c)
 	list	= {}
+<<<<<<< HEAD:p5.p8
 	
 	-- top left and bottom right
 	x1,y1 = pixel_to_cell(c.x-c.r,c.y-c.r)
@@ -57,6 +58,24 @@ function circle_to_cells(c)
 			add(list,{i,j})
 		end
 	end
+=======
+	
+	x1, y1 =pixel_to_cell(c.x-c.r,c.y-c.r)
+	x2, y2 =pixel_to_cell(c.x+c.r,c.y+c.r)
+	--t_r=pixel_to_cell(c.x+c.r,c.y-c.r)
+	--b_l=pixel_to_cell(c.x-c.r,c.y+c.r)
+	
+	for i = x1, x2 do
+		for j = y1, y2 do
+			add(list, {i, j})
+		end
+	end
+	
+	--add(list,t_l)
+	--add(list,b_r)
+	--add(list,t_r)
+	--add(list,b_l)
+>>>>>>> 3520938c261b55adc6ebff2dee40ad78e4f516ae:p5-base.p8
 	
 	return list
 end
@@ -86,7 +105,12 @@ function sweep_hash(hash)
 	local all_buckets = {}
 
 	for index,bucket in pairs(hash) do
+		
 		collide = sweep_naive(bucket)
+<<<<<<< HEAD:p5.p8
+=======
+		
+>>>>>>> 3520938c261b55adc6ebff2dee40ad78e4f516ae:p5-base.p8
 		for i in all(collide) do
 			add(all_buckets, i)	
 		end
